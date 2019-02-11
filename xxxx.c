@@ -5,7 +5,7 @@
 
 // 加注释，加计时，搞明白代码，加训练次数
 // 调整数据
-#define num_of_train 500
+#define num_of_train 50000
 #define num_of_data 1461
 #define rows_of_data 41
 #define ARRAYSIZE(x)  (sizeof(x)/sizeof(*(x)))
@@ -83,7 +83,7 @@ for(int cCount = 0;cCount<num_of_train;cCount++)
 {
 	int training_sample;
 	training_sample = cCount - num_of_data * (cCount / num_of_data);
-	#pragma omp parallel shared(node1weights,node2weights,node3weights,outputlayer,forpassl1,forpassl2,forpassl3,forpassout) num_threads(8)
+	#pragma omp parallel shared(node1weights,node2weights,node3weights,outputlayer,forpassl1,forpassl2,forpassl3,forpassout) num_threads(1)
 	{
 		//hidden layer 1 forward pass 1
 		#pragma omp for schedule(dynamic,5)
@@ -175,7 +175,7 @@ for(int cCount = 0;cCount<num_of_train;cCount++)
 
 		//changing weights in output layer 9
 		#pragma omp for schedule(dynamic,5)
-		for(int k=0;k<2;k++)
+		for(int k=0;k<1;k++)
 			for(int j=0;j<500;j++)
 			{
 				outputlayer[k][j] = outputlayer[k][j] + errRate*(errout[k]*forpassl3[j]);
@@ -212,12 +212,10 @@ for(int cCount = 0;cCount<num_of_train;cCount++)
 			}
 	}
 
-	if ((cCount % 10000) == 0){
-		printf("error: %lf\n", errout[0]);}
 }
-printf("Training Complete\n");
-double end=omp_get_wtime();
-printf("%lf\n", (end-start));
+	printf("Training Complete\n");
+	double end=omp_get_wtime();
+	printf("%lf\n", (end-start));
 }
 
 
