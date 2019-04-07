@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <omp.h>
 #include <math.h>
 
 #define num_of_train 50000
@@ -81,12 +80,8 @@ for(int cCount = 0;cCount<num_of_train;cCount++)
 {
 	int training_sample;
 	training_sample = cCount - num_of_data * (cCount / num_of_data);
-	#pragma omp parallel shared(node1weights,node2weights,node3weights,outputlayer,forpassl1,forpassl2,forpassl3,forpassout) num_threads(1)
-	// 每个线程都会试用这些变量中的某几个，因此将他们设为shared属性。num_threads用于控制测试时的线程数。
 	{
 		//hidden layer 1 forward pass 1
-		#pragma omp for schedule(dynamic,5)
-		// 使用动态调度（dynamic），因为一共用500个节点，每次分配5次迭代。
 		for(int i=0;i<500;i++){
 			forpassl1[i]=0;
 			int multifir = 0;
@@ -95,11 +90,8 @@ for(int cCount = 0;cCount<num_of_train;cCount++)
 			}
 			forpassl1[i]=1/(1+exp(-multifir));
 		}
-		#pragma omp barrier
-		// 等待所有线程完成任务，防止数据竞争。
 
 		//hidden layer 2 forward pass 2
-		#pragma omp for schedule(dynamic,5)
 		for(int i=0;i<500;i++){
 			forpassl2[i]=0;
 			int multifir = 0;
@@ -108,10 +100,8 @@ for(int cCount = 0;cCount<num_of_train;cCount++)
 			}
 			forpassl2[i]=1/(1+exp(-multifir));
 		}
-		#pragma omp barrier
 
 		//hidden layer 3 forward pass 3
-		#pragma omp for schedule(dynamic,5)
 		for(int i=0;i<500;i++){
 			forpassl3[i]=0;
 			int multifir = 0;
@@ -120,10 +110,8 @@ for(int cCount = 0;cCount<num_of_train;cCount++)
 			}
 			forpassl3[i]=1/(1+exp(-multifir));
 		}
-		#pragma omp barrier
 
 		//output layer forward pass 4
-		#pragma omp for schedule(dynamic,5)
 		for(int i=0;i<1;i++){
 			forpassout[i]=0;
 			int multifir = 0;
@@ -132,17 +120,13 @@ for(int cCount = 0;cCount<num_of_train;cCount++)
 			}
 			forpassout[i]=1/(1+exp(-multifir));
 		}
-		#pragma omp barrier
 
 		//error at output layer 5
-		#pragma omp for schedule(dynamic,5)
 		for(int i=0;i<1;i++){
 			errout[i]=forpassout[i]*(1-forpassout[i])*(classes[training_sample][i]-forpassout[i]);
 		}
-		#pragma omp barrier
 
 		//error at hidden layer 3 6
-		#pragma omp for schedule(dynamic,5)
 		for(int i=0;i<500;i++)
 		{	int sum=0;
 			for(int k=0;k<2;k++)
@@ -150,10 +134,8 @@ for(int cCount = 0;cCount<num_of_train;cCount++)
 
 			errl3[i]=forpassl3[i]*(1-forpassl3[i])*sum;
 		}
-		#pragma omp barrier
 
 		//error at hidden layer 2 7
-		#pragma omp for schedule(dynamic,5)
 		for(int i=0;i<500;i++)
 		{	int sum=0;
 			for(int k=0;k<500;k++)
@@ -161,10 +143,8 @@ for(int cCount = 0;cCount<num_of_train;cCount++)
 
 			errl2[i]=forpassl2[i]*(1-forpassl2[i])*sum;
 		}
-		#pragma omp barrier
 
 		//error at hidden layer 1 8
-		#pragma omp for schedule(dynamic,5)
 		for(int i=0;i<500;i++)
 		{	int sum=0;
 			for(int k=0;k<500;k++)
@@ -172,40 +152,29 @@ for(int cCount = 0;cCount<num_of_train;cCount++)
 
 			errl1[i]=forpassl1[i]*(1-forpassl1[i])*sum;
 		}
-		#pragma omp barrier
 
 		//changing weights in output layer 9
-		#pragma omp for schedule(dynamic,5)
 		for(int k=0;k<1;k++)
 			for(int j=0;j<500;j++)
 			{
 				outputlayer[k][j] = outputlayer[k][j] + errRate*(errout[k]*forpassl3[j]);
 			}
 
-		#pragma omp barrier
-
 		// changing weights in hidden layer 3 10
-		#pragma omp for schedule(dynamic,5)
 		for(int k=0;k<500;k++)
 			for(int j=0;j<500;j++)
 			{
 				node3weights[k][j] = node3weights[k][j] + errRate*(errl3[k]*forpassl2[j]);
 			}
 
-		#pragma omp barrier
-
 		//changing weights in hidden layer 2 11
-		#pragma omp for schedule(dynamic,5)
 		for(int k=0;k<500;k++)
 			for(int j=0;j<500;j++)
 			{
 				node2weights[k][j] = node2weights[k][j] + errRate*(errl2[k]*forpassl1[j]);
 			}
 
-		#pragma omp barrier
-
 		//changing weights in hidden layer 1 12
-		#pragma omp for schedule(dynamic,5)
 		for(int k=0;k<500;k++)
 			for(int j=0;j< rows_of_data ;j++)
 			{
